@@ -98,6 +98,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _type: 1
+  _collectSound: {fileID: 8300000, guid: ea2795fb3f0853140921a6aa5becb765, type: 3}
   _point: 50
   rotationSpeed: 50
 --- !u!135 &644054918236735453

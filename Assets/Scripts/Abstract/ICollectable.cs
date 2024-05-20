@@ -1,7 +1,10 @@
+using UnityEngine;
+
 public interface ICollectable
 {
     CollectableType Type { get; }
     int Point { get; }
+    AudioClip CollectSound { get; }
     void SetPassive();
 }
 

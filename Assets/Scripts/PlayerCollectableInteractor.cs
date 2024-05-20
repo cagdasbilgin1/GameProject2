@@ -4,6 +4,7 @@ using Zenject;
 public class PlayerCollectableInteractor : MonoBehaviour
 {
     [Inject] ParticleManager particleManager;
+    [Inject] SoundManager soundManager;
 
     int score;
 
@@ -13,6 +14,7 @@ public class PlayerCollectableInteractor : MonoBehaviour
         if (other.TryGetComponent(out collectable))
         {
             particleManager.PlayParticleAtPosition(collectable.Type, other.transform.position);
+            soundManager.PlaySound(collectable.CollectSound);
             collectable.SetPassive();
             Collect(collectable);
         }

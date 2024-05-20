@@ -1,9 +1,12 @@
 using DG.Tweening;
 using System.Collections.Generic;
 using UnityEngine;
+using Zenject;
 
 public class StackManager : MonoBehaviour
 {
+    [Inject] SoundManager soundManager;
+
     [SerializeField] List<StackGround> _stackPool;
     [SerializeField] List<Material> _materials;
     [SerializeField] StackGround _prevStack;
@@ -14,9 +17,10 @@ public class StackManager : MonoBehaviour
     [SerializeField] float _minStackSize = 0.1f;
 
     StackGround _currentStack;
-    float zPosition;
+    float _zPosition;
     float _prevLeftXBound;
     float _prevRightXBound;
+    int _perfectAlignmentCount;
     int _usedStackCount;
     bool _isGameOver;
 
@@ -71,6 +75,8 @@ public class StackManager : MonoBehaviour
             if (EvaluateGameOver(excessSize)) return;
             ArrangeCurrentStackTransformAfterCut(excessSize, CutDirection.Left);
             CreateExcessPartOfStack(leftXBound, rightXBound, excessSize, CutDirection.Left);
+            soundManager.PlayCutStackSoundRandomly();
+            _perfectAlignmentCount = 0;
         }
         else if (rightXBound - _prevRightXBound > _alignmentTolerance)
         {
@@ -79,10 +85,15 @@ public class StackManager : MonoBehaviour
             if (EvaluateGameOver(excessSize)) return;
             ArrangeCurrentStackTransformAfterCut(excessSize, CutDirection.Right);
             CreateExcessPartOfStack(leftXBound, rightXBound, excessSize, CutDirection.Right);
+            soundManager.PlayCutStackSoundRandomly();
+            _perfectAlignmentCount = 0;
         }
         else
         {
             _currentStack.transform.position = new Vector3(_prevStack.transform.position.x, _currentStack.transform.position.y, _currentStack.transform.position.z);
+
+            _perfectAlignmentCount++;
+            soundManager.PlayPerfectAlignmentSound(_perfectAlignmentCount);
         }
 
         _usedStackCount++;
@@ -155,6 +166,7 @@ public class StackManager : MonoBehaviour
         _isGameOver = true;
         _currentStack.FallDownAndScaleDown();
         _usedStackCount = 0;
+        _perfectAlignmentCount = 0;
     }
 
     void SetCurrentStackMaterialRamdonly()
@@ -180,8 +192,8 @@ public class StackManager : MonoBehaviour
     void ArrangeCurrentStackTransformBeforeMove()
     {
         _currentStack.transform.localScale = new Vector3(_prevStack.transform.localScale.x, _prevStack.transform.localScale.y, _defaultZScale);
-        zPosition = _usedStackCount == 0 ? _prevStack.transform.position.z + (_prevStack.transform.localScale.z / 2) + (_defaultZScale / 2) : zPosition + _defaultZScale;
-        _currentStack.transform.position = new Vector3(_prevStack.transform.position.x, _prevStack.transform.position.y, zPosition);
+        _zPosition = _usedStackCount == 0 ? _prevStack.transform.position.z + (_prevStack.transform.localScale.z / 2) + (_defaultZScale / 2) : _zPosition + _defaultZScale;
+        _currentStack.transform.position = new Vector3(_prevStack.transform.position.x, _prevStack.transform.position.y, _zPosition);
         SetCurrentStackMaterialRamdonly();
         _currentStack.gameObject.SetActive(true);
     }

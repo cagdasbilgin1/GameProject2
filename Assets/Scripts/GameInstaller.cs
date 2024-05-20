@@ -7,5 +7,6 @@ public class GameInstaller : MonoInstaller
     {
         Container.Bind<Player>().FromComponentInHierarchy().AsSingle();
         Container.Bind<ParticleManager>().FromComponentInHierarchy().AsSingle();
+        Container.Bind<SoundManager>().FromComponentInHierarchy().AsSingle();
     }
 }

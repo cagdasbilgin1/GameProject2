@@ -5,12 +5,16 @@ using UnityEngine;
 public class Collectable : MonoBehaviour, ICollectable
 {
     [SerializeField] CollectableType _type;
+    [SerializeField] AudioClip _collectSound;
     [SerializeField] int _point;
+    [SerializeField] float _rotationSpeed = 50f;
+
+    Tweener _rotationTween;
+
     public CollectableType Type => _type;
+    public AudioClip CollectSound => _collectSound;
     public int Point => _point;
 
-    [SerializeField] float rotationSpeed = 50f;
-    Tweener rotationTween;
 
     void OnEnable()
     {
@@ -19,14 +23,14 @@ public class Collectable : MonoBehaviour, ICollectable
 
     void OnDisable()
     {
-        rotationTween.Kill();
+        _rotationTween.Kill();
     }
 
     void RotateY()
     {
-        var rotationDuration = 360f / rotationSpeed;
+        var rotationDuration = 360f / _rotationSpeed;
 
-        rotationTween = transform.DORotate(new Vector3(0, 360, 0), rotationDuration, RotateMode.FastBeyond360)
+        _rotationTween = transform.DORotate(new Vector3(0, 360, 0), rotationDuration, RotateMode.FastBeyond360)
             .SetEase(Ease.Linear)
             .SetLoops(-1, LoopType.Incremental);
     }
