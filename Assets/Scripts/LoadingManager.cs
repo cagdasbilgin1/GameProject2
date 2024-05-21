@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -12,6 +13,8 @@ public class LoadingManager : MonoBehaviour
     [SerializeField] Slider _progressBar;
     [SerializeField] TextMeshProUGUI _loadingTxt;
     [SerializeField] float _totalDuration = 5f;
+
+    public event Action OnLoadingPanelClosed;
 
     void Start()
     {
@@ -37,6 +40,6 @@ public class LoadingManager : MonoBehaviour
         }
 
         _loadingPanel.SetActive(false);
-        player.StartSprint();
+        OnLoadingPanelClosed?.Invoke();
     }
 }

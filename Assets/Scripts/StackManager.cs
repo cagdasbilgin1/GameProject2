@@ -1,7 +1,9 @@
 using DG.Tweening;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Zenject;
+using Random = UnityEngine.Random;
 
 public class StackManager : MonoBehaviour
 {
@@ -22,7 +24,13 @@ public class StackManager : MonoBehaviour
     float _prevRightXBound;
     int _perfectAlignmentCount;
     int _usedStackCount;
+    bool _isGameStart;
     bool _isGameOver;
+
+    [SerializeField] List<Vector3> _playerPath = new();
+
+    public event Action OnFirstStackPlaced;
+    public event Action OnStackCanNotBeConnectedToPath;
 
     void Start()
     {
@@ -31,6 +39,8 @@ public class StackManager : MonoBehaviour
 
     private void Update()
     {
+        if (!_isGameStart) return;
+
         if (Input.GetMouseButtonDown(0))
         {
             StackProcess();
@@ -94,8 +104,13 @@ public class StackManager : MonoBehaviour
 
             _perfectAlignmentCount++;
             soundManager.PlayPerfectAlignmentSound(_perfectAlignmentCount);
+            AddCurrentStackLocationToPath();
         }
 
+        if(_usedStackCount == 0)
+        {
+            OnFirstStackPlaced?.Invoke();
+        }
         _usedStackCount++;
         _prevStack = _currentStack;
     }
@@ -148,21 +163,35 @@ public class StackManager : MonoBehaviour
 
         _currentStack.transform.localScale = newScale;
         _currentStack.transform.position = newPosition;
+
+        AddCurrentStackLocationToPath();
+    }
+
+    void AddCurrentStackLocationToPath()
+    {
+        var newPathLocation = _currentStack.transform.position;
+        newPathLocation.y += _currentStack.transform.localScale.y / 2;
+        newPathLocation.z -= _currentStack.transform.localScale.z / 2;
+        _playerPath.Add(newPathLocation);
     }
 
     bool EvaluateGameOver(float excessSize)
     {
         if (_currentStack.transform.localScale.x - excessSize < _minStackSize)
         {
-            GameOver();
+            OnStackCanNotBeConnectedToPath?.Invoke();
             return true;
         }
         return false;
     }
 
-    void GameOver()
+    public void GameStartCall()
     {
-        Debug.Log("GAMEOVER");
+        _isGameStart = true;
+    }
+
+    public void GameOverCall()
+    {
         _isGameOver = true;
         _currentStack.FallDownAndScaleDown();
         _usedStackCount = 0;
@@ -217,6 +246,17 @@ public class StackManager : MonoBehaviour
     {
         return objTransform.position.x + (objTransform.localScale.x / 2);
     }
+
+    public Vector3 GetNextPlayerPathLocation()
+    {
+        if(_playerPath.Count == 0) return Vector3.zero;
+
+        var nextPath = _playerPath[0];
+        _playerPath.RemoveAt(0);
+        return nextPath;
+    }
+
+    
 }
 
 enum CutDirection

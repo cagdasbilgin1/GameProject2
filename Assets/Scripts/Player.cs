@@ -1,27 +1,43 @@
+using System;
 using System.Collections;
 using UnityEngine;
+using Zenject;
 
 public class Player : MonoBehaviour
 {
+    [Inject] StackManager stackManager;
+
     [SerializeField] CharacterController controller;
-    [SerializeField] float moveSpeed;
-    [SerializeField] float groundRayDistance = 0.4f;
-    [SerializeField] float fallDurationThreshold = 3f;
-    [SerializeField] Transform followLookTransformForCam;
-    [SerializeField] LayerMask groundMask;
+    [SerializeField] float _moveSpeed;
+    [SerializeField] float _groundRayDistance = 0.4f;
+    [SerializeField] float _fallDurationThreshold = 2f;
+    [SerializeField] Transform _followLookTransformForCam;
+    [SerializeField] LayerMask _groundMask;
 
-    bool isGrounded;
-    float fallTimer;
-    bool isRunning;
-    bool isGameOver;
-    float lockedXPos;
-    float lockedYPos;
+    Vector3 _nextPath;
+    bool _isGrounded;
+    float _fallTimer;
+    bool _isRunning;
+    bool _isGameOver;
+    float _lockedXPos;
+    float _lockedYPos;
+    float _tickUpdateFrequency = 0.5f;
 
-    float tickUpdateFrequency = 0.5f;
+    public event Action OnPlayerFellDown;
 
     private void OnValidate()
     {
         UpdateFollowLookTransformPosition();
+    }
+
+    void OnEnable()
+    {
+        stackManager.OnFirstStackPlaced += OnFirstStackPlacedEvent;
+    }
+
+    void OnDisable()
+    {
+        stackManager.OnFirstStackPlaced -= OnFirstStackPlacedEvent;
     }
 
     void Start()
@@ -31,24 +47,24 @@ public class Player : MonoBehaviour
 
     public void StartSprint()
     {
-        isRunning = true;
-        lockedXPos = transform.position.x;
-        lockedYPos = transform.position.y;
+        _isRunning = true;
+        _lockedXPos = transform.position.x;
+        _lockedYPos = transform.position.y;
     }
 
     IEnumerator TickUpdateRoutine()
     {
-        while (!isGameOver)
+        while (!_isGameOver)
         {
             TickUpdate();
-            yield return new WaitForSeconds(tickUpdateFrequency);
+            yield return new WaitForSeconds(_tickUpdateFrequency);
         }
     }
 
     void Update()
     {
         UseGravity();
-        MoveForward();
+        MoveToNextPath();
     }
 
     void TickUpdate()
@@ -59,7 +75,7 @@ public class Player : MonoBehaviour
 
     void GroundCheck()
     {
-        isGrounded = Physics.CheckSphere(transform.position, groundRayDistance, groundMask);
+        _isGrounded = Physics.CheckSphere(transform.position, _groundRayDistance, _groundMask);
     }
 
     void UseGravity()
@@ -69,45 +85,83 @@ public class Player : MonoBehaviour
 
     void CheckFall()
     {
-        if (!isGrounded)
+        if (!_isGrounded)
         {
-            fallTimer += tickUpdateFrequency;
+            _fallTimer += _tickUpdateFrequency;
 
-            if (fallTimer >= fallDurationThreshold)
+            if (_fallTimer >= _fallDurationThreshold)
             {
-                GameOver();
+                OnPlayerFellDown?.Invoke();
             }
         }
     }
 
-    void MoveForward()
+    void UpdateNextPath()
     {
-        if (!isRunning) return;
+        var path = stackManager.GetNextPlayerPathLocation();
+        path.y = transform.position.y;
 
-        controller.Move(moveSpeed * Vector3.forward * Time.deltaTime);
-        followLookTransformForCam.position = new Vector3(lockedXPos, lockedYPos, controller.transform.position.z);
+        if (path.z < transform.position.z) //path node is behind the player
+        {
+            _nextPath = transform.position + Vector3.forward;
+        }
+        else
+        {
+            _nextPath = path;
+        }
     }
 
-    void GameOver()
+    void MoveToNextPath()
     {
-        isGameOver = true;
-        Debug.Log("GAME OVER");
+        if (!_isRunning) return;
+
+        var dir = _nextPath - transform.position;
+
+        if (dir.magnitude > 0.1f)
+        {
+            controller.Move(_moveSpeed * dir.normalized * Time.deltaTime);
+        }
+        else
+        {
+            UpdateNextPath();
+        }
+
+        _followLookTransformForCam.position = new Vector3(_lockedXPos, _lockedYPos, controller.transform.position.z);
     }
 
     void UpdateFollowLookTransformPosition()
     {
-        if (followLookTransformForCam != null)
+        if (_followLookTransformForCam != null)
         {
-            followLookTransformForCam.position = new Vector3(lockedXPos, lockedYPos, controller.transform.position.z);
+            _followLookTransformForCam.position = new Vector3(_lockedXPos, _lockedYPos, controller.transform.position.z);
         }
+    }
+
+    void OnFirstStackPlacedEvent()
+    {
+        UpdateNextPath();
+        StartSprint();
+    }
+
+    public void GameStartCall()
+    {
+
+    }
+
+    public void GameOverCall()
+    {
+        _isGameOver = true;
     }
 
     void OnDrawGizmos()
     {
-        if (followLookTransformForCam != null)
+        if (_followLookTransformForCam != null)
         {
             Gizmos.color = Color.red;
-            Gizmos.DrawSphere(followLookTransformForCam.position, 0.2f);
+            Gizmos.DrawSphere(_followLookTransformForCam.position, 0.2f);
         }
+
+        Gizmos.color = Color.green;
+        Gizmos.DrawSphere(_nextPath, 0.1f);
     }
 }
