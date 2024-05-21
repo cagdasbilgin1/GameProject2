@@ -10,5 +10,8 @@ public class GameInstaller : MonoInstaller
         Container.Bind<ParticleManager>().FromComponentInHierarchy().AsSingle();
         Container.Bind<SoundManager>().FromComponentInHierarchy().AsSingle();
         Container.Bind<LoadingManager>().FromComponentInHierarchy().AsSingle();
+        Container.Bind<PlayerAnimationManager>().FromComponentInHierarchy().AsSingle();
+        Container.Bind<UIManager>().FromComponentInHierarchy().AsSingle();
+        Container.Bind<CollectableManager>().FromComponentInHierarchy().AsSingle();
     }
 }

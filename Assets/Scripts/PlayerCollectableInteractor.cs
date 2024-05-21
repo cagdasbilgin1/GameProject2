@@ -5,8 +5,9 @@ public class PlayerCollectableInteractor : MonoBehaviour
 {
     [Inject] ParticleManager particleManager;
     [Inject] SoundManager soundManager;
+    [Inject] UIManager uiManager;
 
-    int score;
+    int _score;
 
     void OnTriggerEnter(Collider other)
     {
@@ -20,14 +21,10 @@ public class PlayerCollectableInteractor : MonoBehaviour
         }
     }
 
-    void OnControllerColliderHit(ControllerColliderHit hit)
-    {
-        
-    }
-
     void Collect(ICollectable collectable)
     {
-        score += collectable.Point;
+        _score += collectable.Point;
         collectable.SetPassive();
+        uiManager.UpdateScoreText(_score);
     }
 }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Zenject;
 
 public class GameManager : MonoBehaviour
@@ -11,19 +12,16 @@ public class GameManager : MonoBehaviour
     {
         loadingManager.OnLoadingPanelClosed += GameStart;
         player.OnPlayerFellDown += GameOver;
-        stackManager.OnStackCanNotBeConnectedToPath += GameOver;
     }
 
     void OnDisable()
     {
         loadingManager.OnLoadingPanelClosed -= GameStart;
         player.OnPlayerFellDown -= GameOver;
-        stackManager.OnStackCanNotBeConnectedToPath -= GameOver;
     }
 
     void GameStart()
     {
-        player.GameStartCall();
         stackManager.GameStartCall();
     }
 
@@ -31,5 +29,7 @@ public class GameManager : MonoBehaviour
     {
         player.GameOverCall();
         stackManager.GameOverCall();
+
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

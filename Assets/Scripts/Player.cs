@@ -3,11 +3,13 @@ using System.Collections;
 using UnityEngine;
 using Zenject;
 
+[RequireComponent(typeof(PlayerAnimationManager))]
 public class Player : MonoBehaviour
 {
     [Inject] StackManager stackManager;
 
-    [SerializeField] CharacterController controller;
+    [SerializeField] CharacterController _controller;
+    [SerializeField] PlayerAnimationManager _animationManager;
     [SerializeField] float _moveSpeed;
     [SerializeField] float _groundRayDistance = 0.4f;
     [SerializeField] float _fallDurationThreshold = 2f;
@@ -15,15 +17,22 @@ public class Player : MonoBehaviour
     [SerializeField] LayerMask _groundMask;
 
     Vector3 _nextPath;
+    const float _gravityScale = 9.81f;
     bool _isGrounded;
     float _fallTimer;
     bool _isRunning;
+    bool _isDancing;
     bool _isGameOver;
     float _lockedXPos;
     float _lockedYPos;
     float _tickUpdateFrequency = 0.5f;
+    bool _isRoundFinished;
+    Vector3 _finishGroundPos;
 
     public event Action OnPlayerFellDown;
+    public event Action OnRoundFinished;
+
+    public Transform FollowLookTransformForCam => _followLookTransformForCam;
 
     private void OnValidate()
     {
@@ -33,6 +42,7 @@ public class Player : MonoBehaviour
     void OnEnable()
     {
         stackManager.OnFirstStackPlaced += OnFirstStackPlacedEvent;
+        stackManager.OnRoundFinish += OnRoundFinishEvent;
     }
 
     void OnDisable()
@@ -48,6 +58,7 @@ public class Player : MonoBehaviour
     public void StartSprint()
     {
         _isRunning = true;
+        _isDancing = false;
         _lockedXPos = transform.position.x;
         _lockedYPos = transform.position.y;
     }
@@ -80,7 +91,7 @@ public class Player : MonoBehaviour
 
     void UseGravity()
     {
-        controller.Move(9.81f * Vector3.down * Time.deltaTime);
+        _controller.Move(_gravityScale * Vector3.down * Time.deltaTime);
     }
 
     void CheckFall()
@@ -96,6 +107,24 @@ public class Player : MonoBehaviour
         }
     }
 
+    void MoveToNextPath()
+    {
+        if (!_isRunning || _isDancing) return;
+
+        var dir = _nextPath - transform.position;
+
+        if (dir.magnitude > 0.1f)
+        {
+            _controller.Move(_moveSpeed * dir.normalized * Time.deltaTime);
+        }
+        else
+        {
+            UpdateNextPath();
+        }
+
+        _followLookTransformForCam.position = new Vector3(_lockedXPos, _lockedYPos, _controller.transform.position.z);
+    }
+
     void UpdateNextPath()
     {
         var path = stackManager.GetNextPlayerPathLocation();
@@ -103,6 +132,14 @@ public class Player : MonoBehaviour
 
         if (path.z < transform.position.z) //path node is behind the player
         {
+            if (_isRoundFinished)
+            {
+                _isDancing = true;
+
+                _animationManager.Dance();
+                OnRoundFinished?.Invoke();
+                return;
+            }
             _nextPath = transform.position + Vector3.forward;
         }
         else
@@ -111,29 +148,12 @@ public class Player : MonoBehaviour
         }
     }
 
-    void MoveToNextPath()
-    {
-        if (!_isRunning) return;
-
-        var dir = _nextPath - transform.position;
-
-        if (dir.magnitude > 0.1f)
-        {
-            controller.Move(_moveSpeed * dir.normalized * Time.deltaTime);
-        }
-        else
-        {
-            UpdateNextPath();
-        }
-
-        _followLookTransformForCam.position = new Vector3(_lockedXPos, _lockedYPos, controller.transform.position.z);
-    }
 
     void UpdateFollowLookTransformPosition()
     {
         if (_followLookTransformForCam != null)
         {
-            _followLookTransformForCam.position = new Vector3(_lockedXPos, _lockedYPos, controller.transform.position.z);
+            _followLookTransformForCam.position = new Vector3(_lockedXPos, _lockedYPos, _controller.transform.position.z);
         }
     }
 
@@ -143,14 +163,21 @@ public class Player : MonoBehaviour
         StartSprint();
     }
 
-    public void GameStartCall()
+    void OnRoundFinishEvent(Vector3 finishGroundPos)
     {
-
+        _finishGroundPos = finishGroundPos;
+        _isRoundFinished = true;
     }
 
     public void GameOverCall()
     {
         _isGameOver = true;
+    }
+
+    public void NextRoundReady()
+    {
+        _isRoundFinished = false;
+        _animationManager.Run();
     }
 
     void OnDrawGizmos()

@@ -7,6 +7,7 @@ public class StackGround : MonoBehaviour
 
     float _fallPositionOffset = 50;
     float _fallDuration = 2;
+    float _riseDuration = 2;
     float _scaleDownDuration = 1;
 
     public Material Material => _renderer.sharedMaterial;
@@ -30,11 +31,28 @@ public class StackGround : MonoBehaviour
         sequence.OnComplete(() => gameObject.SetActive(false));
     }
 
+    public void RiseUp()
+    {
+        var sequence = DOTween.Sequence();
+
+        var positionY = transform.position.y;
+        transform.position = new Vector3(transform.position.x, -_fallPositionOffset, transform.position.z);
+
+        gameObject.SetActive(true);
+        sequence.Append(transform.DOMoveY(positionY, _riseDuration)
+            .SetEase(Ease.OutQuad));
+    }
+
     private void OnDisable()
     {
         transform.DOKill();
 
         transform.position = Vector3.zero;
         transform.localScale = Vector3.one;
+    }
+
+    private void OnDestroy()
+    {
+        transform.DOKill();
     }
 }

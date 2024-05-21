@@ -5,15 +5,15 @@ using UnityEngine.UIElements;
 
 public class ParticleManager : MonoBehaviour
 {
-    [SerializeField] List<ParticleSystem> coinParticlePool;
-    [SerializeField] List<ParticleSystem> starParticlePool;
-    [SerializeField] List<ParticleSystem> gemParticlePool;
-    [SerializeField] List<ParticleSystem> trailParticlePool;
+    [SerializeField] List<ParticleSystem> _coinParticlePool;
+    [SerializeField] List<ParticleSystem> _starParticlePool;
+    [SerializeField] List<ParticleSystem> _gemParticlePool;
+    [SerializeField] List<ParticleSystem> _trailParticlePool;
 
-    [SerializeField] float trailHeight = 6f;
-    [SerializeField] float trainDuration = 1f;
+    [SerializeField] float _trailHeight = 6f;
+    [SerializeField] float _trainDuration = 1f;
 
-    bool hasTrail;
+    bool _hasTrail;
 
     public void PlayParticleAtPosition(CollectableType type, Vector3 position)
     {
@@ -22,14 +22,14 @@ public class ParticleManager : MonoBehaviour
         particle.transform.position = position;
         particle.Play();
 
-        if (hasTrail)
+        if (_hasTrail)
         {
             var trailParticle = GetTrailParticleFromPool();
 
             trailParticle.transform.position = position;
             trailParticle.Play();
 
-            trailParticle.transform.DOMoveY(transform.position.y + trailHeight, trainDuration).SetEase(Ease.OutQuad);
+            trailParticle.transform.DOMoveY(transform.position.y + _trailHeight, _trainDuration).SetEase(Ease.OutQuad);
         }
     }
 
@@ -38,14 +38,14 @@ public class ParticleManager : MonoBehaviour
         switch (type)
         {
             case CollectableType.Coin:
-                hasTrail = false;
-                return coinParticlePool;
+                _hasTrail = false;
+                return _coinParticlePool;
             case CollectableType.Star:
-                hasTrail = true;
-                return starParticlePool;
+                _hasTrail = true;
+                return _starParticlePool;
             case CollectableType.Gem:
-                hasTrail = false;
-                return gemParticlePool;
+                _hasTrail = false;
+                return _gemParticlePool;
             default:
                 return null;
         }
@@ -64,10 +64,10 @@ public class ParticleManager : MonoBehaviour
 
     ParticleSystem GetTrailParticleFromPool()
     {
-        var particle = trailParticlePool[trailParticlePool.Count - 1];
+        var particle = _trailParticlePool[_trailParticlePool.Count - 1];
 
-        trailParticlePool.Remove(particle);
-        trailParticlePool.Insert(0, particle);
+        _trailParticlePool.Remove(particle);
+        _trailParticlePool.Insert(0, particle);
 
         return particle;
     }

@@ -15,7 +15,6 @@ public class Collectable : MonoBehaviour, ICollectable
     public AudioClip CollectSound => _collectSound;
     public int Point => _point;
 
-
     void OnEnable()
     {
         RotateY();
